@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/style.css">
+    <script src="scenes.js"></script> <script src="../assets/shared.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* צבעים לדנה - גווני סגול */
+            --bubble-dana: #f3e5f5;
+            --border-dana: #9c27b0;
+            
+            /* צבעים ליוסי - גווני ירוק */
+            --bubble-yossi: #e8f5e9;
+            --border-yossi: #4caf50;
+            
+            /* צבע ה-NVC (הצד האחורי) */
+            --nvc-green: #d1fae5;
+        }
+    
+        /* ריווח וסידור בועות */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin: 30px 0;
+            perspective: 1000px;
+        }
+    
+        .bubble-wrapper {
+            width: 90%;
+            min-height: 85px; /* גדל מעט כדי לתת אוויר */
+            position: relative;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+    
+        .bubble-wrapper.flipped {
+            transform: rotateY(180deg);
+        }
+    
+        .bubble-front, .bubble-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 15px 20px;
+            border-radius: 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+    
+        .name-label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #4a5568;
+        }
+    
+        /* הצד האחורי - תמיד ירוק NVC לשני הצדדים */
+        .bubble-back {
+            transform: rotateY(180deg);
+            background-color: var(--nvc-green) !important;
+            border: 2px solid #34d399;
+            color: #065f46;
+            font-weight: 500;
+        }
+    
+        .dana-wrapper { align-self: flex-start; }
+        .yossi-wrapper { align-self: flex-end; }
+        
+        /* עיצוב ספציפי לדנה (סגול) */
+        .dana-wrapper .bubble-front { 
+            background-color: var(--bubble-dana); 
+            border-right: 5px solid var(--border-dana); 
+        }
+        
+        /* עיצוב ספציפי ליוסי (ירוק) */
+        .yossi-wrapper .bubble-front { 
+            background-color: var(--bubble-yossi); 
+            border-left: 5px solid var(--border-yossi); 
+        }
+    
+        /* אזור השאלות */
+        .question-area {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+            margin-top: 40px;
+        }
+    
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+    
+        .option-btn {
+            padding: 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+    
+        .option-btn:hover { background: #edf2f7; transform: translateY(-2px); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="game-card">
+        <div style="color: #718096; font-size: 0.8rem; text-align: center; margin-bottom: 10px;">שלב 3: מפענח הצרכים</div>
+        
+        <div class="chat-container">
+            <div id="wrapper-dana" class="bubble-wrapper dana-wrapper">
+                <div class="bubble-front">
+                    <span class="name-label">דנה:</span>
+                    "אתה רק בפלאפון שלך כל הזמן! אתה בכלל לא איתי."
+                </div>
+                <div id="nvc-dana" class="bubble-back"></div>
+            </div>
+
+            <div id="wrapper-yossi" class="bubble-wrapper yossi-wrapper">
+                <div class="bubble-front">
+                    <span class="name-label">יוסי:</span>
+                    "אני רק עכשיו נכנסתי הביתה, ואת כבר 'אוכלת לי את הראש'!"
+                </div>
+                <div id="nvc-yossi" class="bubble-back"></div>
+            </div>
+        </div>
+
+        <div id="question-box" class="question-area">
+            <p id="question-text" style="font-weight: bold; font-size: 1.1rem;"></p>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback" class="explanation-box hidden" style="margin-top:20px;"></div>
+        
+        <button id="next-btn" class="hidden" style="width:100%; margin-top:20px; background:#4a90e2; color:white; padding: 15px;" onclick="handleNextStep()">המשיכו ←</button>
+    </div>
+
+    <script>
+        // 1. הגדרות משתנים גלובליים
+        // וודא שקובץ scenes.js נטען לפני כן ב-HTML
+        let currentSceneIndex = Math.floor(Math.random() * nvcScenesBank.length);
+        let scene = nvcScenesBank[currentSceneIndex];
+        let currentStep = 0;
+
+        // 2. פונקציית טעינת הסצנה (הקוד ששלחת עם שיפור קטן)
+        function loadScene() {
+            // עדכון כותרת הסצנה בראש הדף (אופציונלי)
+            console.log("טוען סצנה:", scene.title);
+            
+            const container = document.querySelector('.chat-container');
+            container.innerHTML = ''; // ניקוי הצ'אט הקיים
+
+            // בניית הבועות בצורה דינמית לפי המילון
+            scene.steps.forEach(step => {
+                const wrapper = document.createElement('div');
+                wrapper.id = `wrapper-${step.target}`;
+                
+                // קביעת צבע לפי מגדר: female = סגול (dana-wrapper), male = ירוק (yossi-wrapper)
+                const genderClass = (step.gender === 'female') ? 'dana-wrapper' : 'yossi-wrapper';
+                wrapper.className = `bubble-wrapper ${genderClass}`;
+                
+                wrapper.innerHTML = `
+                    <div class="bubble-front">
+                        <span class="name-label">${step.name}:</span>
+                        "${step.originalText}"
+                    </div>
+                    <div id="nvc-${step.target}" class="bubble-back"></div>
+                `;
+                container.appendChild(wrapper);
+            });
+            
+            loadStep(); // טעינת השאלה הראשונה עבור השלב הנוכחי
+        }
+
+        // 3. טעינת השאלה הספציפית בתוך הסצנה
+        function loadStep() {
+            const step = scene.steps[currentStep];
+            const questionBox = document.getElementById('question-box');
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('next-btn');
+
+            document.getElementById('question-text').innerText = step.question;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            step.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                optionsDiv.appendChild(btn);
+            });
+            
+            questionBox.classList.remove('hidden');
+            feedback.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+        }
+
+        // 4. בדיקת התשובה
+        function checkAnswer(selected) {
+            const step = scene.steps[currentStep];
+            const feedback = document.getElementById('feedback');
+            
+            if (selected === step.correct) {
+                // הצלחה - הפיכת הבועה
+                const wrapper = document.getElementById(`wrapper-${step.target}`);
+                const backSide = document.getElementById(`nvc-${step.target}`);
+                
+                // הוספת השם והתרגום לצד האחורי
+                backSide.innerHTML = `<span class="name-label">${step.name} (NVC):</span>${step.translation}`;
+                wrapper.classList.add('flipped');
+                
+                feedback.innerHTML = `<b>בדיוק!</b> זיהית את הצורך של ${step.name} ב-<b>${step.correct}</b>.`;
+                feedback.className = "explanation-box correct-glow";
+                feedback.classList.remove('hidden');
+                
+                document.getElementById('question-box').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+                
+                if (currentStep === scene.steps.length - 1) {
+                    document.getElementById('next-btn').innerText = "סיום הסצנה ✨";
+                }
+            } else {
+                // הזדמנות ללמידה - שימוש בניסוח שסיכמנו עליו
+                feedback.innerHTML = `<b>הזדמנות ללמידה:</b> אנחנו חשבנו שזה מתאים יותר ל-<b>${step.correct}</b> כי חלק מזה בסיטואציה הזו הוא ${step.translation.split('כי')[1] || 'הצורך המסתתר'}. נסו שוב!`;
+                feedback.className = "explanation-box learning-mode";
+                feedback.classList.remove('hidden');
+            }
+        }
+
+        // 5. ניהול המעבר בין שלבים/סיום
+        function handleNextStep() {
+            currentStep++;
+            if (currentStep < scene.steps.length) {
+                loadStep();
+            } else {
+                // סיום כל הסצנה
+                celebrateVictory();
+                document.getElementById('game-card').innerHTML = `
+                    <div style="text-align:center; padding: 20px;">
+                        <h2>הפכתם קונפליקט לחיבור! 🤝</h2>
+                        <p>ראיתם איך הקשבה לצרכים של ${scene.steps[0].name} ו-${scene.steps[1].name} משנה את הכל?</p>
+                        <button class="stage-btn" style="background:#4a90e2; color:white; width:100%; margin-top: 20px;" onclick="location.href='../index.html'">חזרה לתפריט</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 6. הפעלה ראשונית בטעינת הדף
+        window.onload = loadScene;
+    </script>
+</body>
+</html>

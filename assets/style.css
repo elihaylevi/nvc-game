@@ -1,0 +1,296 @@
+:root {
+    --soft-success: rgba(104, 211, 145, 0.6);
+    --soft-error: rgba(245, 101, 101, 0.4);
+    --text-main: #2d3748;
+    --gold: #ffd700;
+    --fire-gradient: linear-gradient(90deg, #ff4d4d, #f9cb28, #ff4d4d);
+}
+
+body { 
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('../background.png') no-repeat center center fixed; 
+    background-size: cover;
+    overflow: hidden;
+}
+
+body::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.3); z-index: 1;
+}
+
+#game-card { 
+    position: relative; 
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9); 
+    backdrop-filter: blur(10px);
+    padding: 40px; 
+    border-radius: 30px; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+    text-align: center; 
+    width: 450px; 
+    
+    /* פתרון הגובה: הסרנו את ה-min-height הקבוע */
+    height: auto; 
+    min-height: fit-content;
+    
+    /* מעבר חלק כשגודל הכרטיס משתנה */
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px; /* מרווח קבוע בין האלמנטים */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#step-label, .stage-label { 
+    color: #718096; 
+    font-size: 1.1rem; /* הוגדל מ-0.8 */
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.correct-glow { box-shadow: 0 0 50px var(--soft-success) !important; border-color: #68d391 !important; }
+.error-glow { box-shadow: 0 0 30px var(--soft-error) !important; border-color: #fc8181 !important; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+.shake-me { animation: shake 0.3s ease-in-out; }
+
+.word-display { 
+    font-size: 4rem; /* הוגדל מ-3 */
+    font-weight: 800; 
+    color: var(--text-main); 
+    margin: 10px 0; 
+    line-height: 1.2;
+}
+
+.explanation-box { 
+    margin-top: 10px; 
+    padding: 20px; 
+    border-radius: 15px; 
+    background: rgba(247, 250, 252, 0.9); 
+    font-size: 1.25rem; /* הוגדל משמעותית */
+    line-height: 1.6;
+    color: var(--text-main);
+    text-align: right; /* יישור לימין לקריאה נוחה של עברית */
+}
+
+.explanation-box b, .explanation-box strong {
+    font-size: 1.4rem;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.progress-container {
+    position: relative; width: 100%; height: 8px; background: #edf2f7;
+    border-radius: 10px; margin-top: 25px; border: 1px solid #e2e8f0;
+}
+#progress-fill { 
+    width: 0%; height: 100%; background: #48bb78; 
+    transition: width 0.4s ease; border-radius: 10px;
+}
+
+.on-fire { 
+    background: var(--fire-gradient) !important; 
+    background-size: 200% 100% !important;
+    animation: fireMove 1s linear infinite;
+    box-shadow: 0 0 15px #ff4d4d;
+}
+
+@keyframes fireMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+@keyframes fireIntensify {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(1.8); filter: brightness(1.5); }
+    100% { transform: scaleY(1); }
+}
+.intensify { animation: fireIntensify 0.4s ease-out; }
+
+.star-particle { position: fixed; pointer-events: none; z-index: 100; color: var(--gold); font-size: 1.2rem; }
+@keyframes explode {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1.2) rotate(180deg); }
+}
+
+
+/* ניהול ריווח בין כפתורים */
+.btn-container { 
+    display: flex; 
+    gap: 20px; 
+    justify-content: center; 
+    margin-top: 10px;
+}
+
+/* עיצוב הכפתור הבוגר והנקי */
+button { 
+    padding: 14px 32px; 
+    border-radius: 50px; /* הופך את הכפתור לצורת קפסולה נעימה */
+    border: 2px solid transparent; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 1.05rem;
+    
+    /* מעברים חלקים לשיפור תחושת ה-UX */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    
+    background: white; 
+    color: var(--text-main);
+    
+    /* צל עדין שמעניק עומק במקום מראה שטוח וילדותי */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    outline: none;
+}
+
+/* אפקט ריחוף (Hover) - הכפתור "צף" מעט למעלה */
+button:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    background: #fcfcfc;
+}
+
+/* אפקט לחיצה - תחושה פיזית של שקיעה */
+button:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* בידול עדין בין כפתורי הבחירה (זה רגש / לא רגש) */
+#action-buttons button:first-child {
+    border-color: rgba(72, 187, 120, 0.2); /* ירוק מרווה עדין מאוד */
+    color: #2f855a;
+}
+
+#action-buttons button:last-child {
+    border-color: rgba(237, 137, 54, 0.2); /* כתום חמר עדין מאוד */
+    color: #c05621;
+}
+
+/* כפתור "המשיכו" - מאוחד, גדול וברור */
+#next-btn {
+    /* הגדרות צבע ורקע */
+    background: var(--text-main) !important;
+    color: white !important;
+    border: none;
+    
+    /* הגדרות גודל וריווח */
+    margin-top: 25px;
+    width: 100%;
+    padding: 16px;
+    
+    /* טיפוגרפיה */
+    font-size: 1.2rem;
+    font-weight: 700;
+    
+    /* נראות ועיצוב */
+    border-radius: 15px; /* פחות מעוגל משאר הכפתורים להדגשת פעולת המשך */
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* אפקט ריחוף לכפתור המשיכו */
+#next-btn:hover {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* התאמת ה-Progress Area */
+.progress-area {
+    margin-top: 10px;
+}
+
+/* 1. הטקסט בדף הבית (index.html) */
+.start-card p {
+    font-size: 1.5rem; /* הוגדל משמעותית */
+    line-height: 1.6;
+    color: #4a5568;
+    margin: 25px 0;
+}
+
+.start-card h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* 2. תגיות השלבים בראש הכרטיס (שלב 1: רגשות וכו') */
+#step-label, .stage-label { 
+    color: #718096; 
+    font-size: 1.4rem; /* הוגדל מ-0.8 */
+    font-weight: 700;
+    margin-bottom: 15px;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+/* 3. תיבת ההודעות והפידבק (גם בטעות וגם בהצלחה) */
+.explanation-box { 
+    margin-top: 15px; 
+    padding: 25px; 
+    border-radius: 15px; 
+    background: rgba(247, 250, 252, 0.95); 
+    font-size: 1.4rem; /* הגדלה משמעותית של תוכן ההסבר */
+    line-height: 1.7;
+    color: var(--text-main);
+    text-align: right;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* הכותרת בתוך הפידבק (למידה / בדיוק) */
+.explanation-box b, 
+.explanation-box strong {
+    font-size: 1.8rem; /* כותרת הפידבק בולטת מאוד */
+    display: block;
+    margin-bottom: 10px;
+    color: #2d3748;
+}
+
+/* 4. המילה המרכזית (למקרה שתרצה עוד נוכחות) */
+.word-display { 
+    font-size: 4.5rem; 
+    font-weight: 800;
+    margin: 15px 0;
+}
+
+/* assets/style.css */
+
+/* הילה כתומה להזדמנות למידה */
+.learning-glow { 
+    box-shadow: 0 0 50px rgba(237, 137, 54, 0.6) !important; 
+    border-color: #ed8936 !important; 
+    transition: all 0.4s ease;
+}
+
+/* התאמת צבע הטקסט בתוך תיבת ההסבר כשזה כתום */
+.explanation-box.learning-mode {
+    border-right: 5px solid #ed8936;
+    background: rgba(253, 242, 233, 0.9);
+}
+
+/* assets/style.css */
+
+.stage-btn {
+    width: 100%;
+    /* משתמש בהגדרות ה-button הקיים שלנו */
+}
+
+/* סגנון לשלב נעול */
+.stage-btn.locked {
+    background: #edf2f7 !important;
+    color: #a0aec0 !important;
+    cursor: not-allowed;
+    border: 1px dashed #cbd5e0 !important;
+    box-shadow: none !important;
+    transform: none !important; /* מבטל את אפקט הציפה בריחוף */
+}
+
+.stage-btn.locked:hover {
+    background: #edf2f7 !important; /* נשאר אותו דבר */
+}

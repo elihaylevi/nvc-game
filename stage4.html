@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/style.css">
+    <script src="../assets/shared.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bubble-dana: #f3e5f5;
+            --border-dana: #9c27b0;
+            --nvc-green: #d1fae5;
+            --nvc-border: #34d399;
+            --fitting-green: #c6f6d5;
+            --fitting-border: #38a169;
+            --less-fitting-orange: #feebc8;
+            --less-fitting-border: #dd6b20;
+            --builder-bg: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+        }
+
+        #game-card { padding: 30px 20px; max-width: 550px; margin: auto; }
+
+        /* בועת התלונה */
+        .bubble-dana {
+            background-color: var(--bubble-dana);
+            border-right: 5px solid var(--border-dana);
+            padding: 15px 20px;
+            border-radius: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* תיבת הטיוטה */
+        .nvc-builder {
+            background: var(--builder-bg);
+            border: 1px solid #bae6fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .nvc-builder::before {
+            content: '✏️';
+            position: absolute; top: -12px; right: 15px;
+            background: white; padding: 2px 8px; border-radius: 10px; border: 1px solid #bae6fd; font-size: 0.9rem;
+        }
+
+        /* כרטיסי השלבים */
+        .step-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.4s ease-out;
+        }
+        .step-title { font-weight: bold; font-size: 1.1rem; color: #4a5568; text-align: center; margin-bottom: 25px; }
+
+        /* --- סידור האופציות (רגשות וצרכים - 2x2) --- */
+        .options-grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* יוצר 2 עמודות */
+            gap: 15px; /* מרווח שווה בין הכפתורים */
+        }
+
+        /* --- סידור "הצרכים שלי" (3 כפתורים ממורכזים) --- */
+        .options-centered-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .options-centered-stack .option-btn {
+            width: 85%; /* לא נמתח לכל הרוחב בשביל המרכוז */
+        }
+
+        .option-btn {
+            padding: 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 80px;
+        }
+        .option-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        
+        .btn-fitting { background-color: var(--fitting-green) !important; border-color: var(--fitting-border) !important; color: #22543d; }
+        .btn-less-fitting { background-color: var(--less-fitting-orange) !important; border-color: var(--less-fitting-border) !important; color: #742a2a; }
+
+        .decision-btn {
+            width: 100%; margin-bottom: 12px; padding: 20px; border-radius: 15px;
+            cursor: pointer; font-weight: bold; font-size: 1.05rem; border: none; transition: 0.2s;
+        }
+        .btn-yes { background: #e6fffa; color: #2c7a7b; border: 1px solid #38b2ac; }
+        .btn-no { background: #fffaf0; color: #c05621; border: 1px solid #ed8936; }
+
+        .nvc-final-bubble {
+            background-color: var(--nvc-green);
+            border: 2px solid var(--nvc-border);
+            color: #065f46;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .step-hidden { display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="game-card">
+        <div style="text-align: center; color: #718096; font-size: 0.8rem; margin-bottom: 15px;">שלב 4: הריקוד התקשורתי</div>
+        
+        <div class="chat-preview">
+            <div class="bubble-dana">
+                <span style="font-size: 0.75rem; font-weight: bold; color: var(--border-dana); display: block; margin-bottom: 5px;">דנה:</span>
+                "אתה כל הזמן בפלאפון שלך! אתה בכלל לא איתי."
+            </div>
+        </div>
+
+        <div class="nvc-builder" id="builder-box">
+            <div id="builder-text" style="color: #4a5568;">ממתין להקשבה האמפתית שלך...</div>
+        </div>
+
+        <div id="active-step-container">
+            <div id="step-emotion" class="step-card">
+                <div id="emotion-msg" class="learning-msg step-hidden" style="text-align:center; margin-bottom:15px; color:#dd6b20;">🤔 אנחנו חשבנו שאחד מהם יוכל יותר להתאים:</div>
+                <p class="step-title">1. איך נראה לך שדנה מרגישה?</p>
+                <div class="options-grid-2x2">
+                    <button class="option-btn" data-best="true" onclick="handleSelect(this, 'emotion', 'בודדה')"><span>בודדה</span><span>😔</span></button>
+                    <button class="option-btn" data-best="true" onclick="handleSelect(this, 'emotion', 'עצבנית')"><span>עצבנית</span><span>😠</span></button>
+                    <button class="option-btn" data-best="false" onclick="handleSelect(this, 'emotion', 'עייפה')"><span>עייפה</span><span>😴</span></button>
+                    <button class="option-btn" data-best="false" onclick="handleSelect(this, 'emotion', 'מודאגת')"><span>מודאגת</span><span>😟</span></button>
+                </div>
+            </div>
+
+            <div id="step-need" class="step-card step-hidden">
+                <div id="need-msg" class="learning-msg step-hidden" style="text-align:center; margin-bottom:15px; color:#dd6b20;">💡 צורך הוא משהו שורשי, אנחנו חשבנו על:</div>
+                <p class="step-title">2. מה הצורך שלה שלא נענה?</p>
+                <div class="options-grid-2x2">
+                    <button class="option-btn" data-best="true" onclick="handleSelect(this, 'need', 'חיבור')"><span>חיבור</span><span>❤️</span></button>
+                    <button class="option-btn" data-best="true" onclick="handleSelect(this, 'need', 'התחשבות')"><span>התחשבות</span><span>🤝</span></button>
+                    <button class="option-btn" data-best="false" onclick="handleSelect(this, 'need', 'סדר')"><span>סדר</span><span>📅</span></button>
+                    <button class="option-btn" data-best="false" onclick="handleSelect(this, 'need', 'ביטחון')"><span>ביטחון</span><span>🛡️</span></button>
+                </div>
+            </div>
+
+            <div id="step-choice" class="step-card step-hidden">
+                <p class="step-title">3. הריקוד: האם אתה פנוי אליה עכשיו?</p>
+                <div class="options-centered-stack">
+                    <button class="decision-btn btn-yes" onclick="handleDecision(true)">כן, אני יכול להקשיב ✅</button>
+                    <button class="decision-btn btn-no" onclick="handleDecision(false)">לא כרגע, יש לי צורך אחר 🛑</button>
+                </div>
+            </div>
+
+            <div id="step-my-need" class="step-card step-hidden">
+                <p class="step-title">4. מה מונע ממך להקשיב? (היה כנה)</p>
+                <div class="options-centered-stack">
+                    <button class="option-btn" onclick="finishDance('מנוחה', 'אני רוצה לנוח רגע על הספה.')"><span>אני גמור וצריך מנוחה</span><span>🛋️</span></button>
+                    <button class="option-btn" onclick="finishDance('תנועה', 'אני על קוצים, אולי נצא להליכה?')"><span>אני חייב לזוז (תנועה)</span><span>🏃</span></button>
+                    <button class="option-btn" onclick="finishDance('משחק', 'אני באמצע משהו שחשוב לי לסיים.')"><span>זקוק להשלים את הפעילות</span><span>🎮</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="final-result" class="step-hidden">
+            <div style="background:#edf2f7; padding:15px; border-radius:12px; color:#4a5568; font-size:0.95rem; border-right: 4px solid #cbd5e0; margin-bottom: 10px;">
+                <b>עמדת על הצורך שלך בכבוד 🤝</b><br>
+                התגובה הכנה שלך (שמשלבת אמפתיה וגבולות):
+            </div>
+            <div class="nvc-final-bubble" id="final-bubble-text"></div>
+            <button class="stage-btn" style="background:#4a90e2; color:white; width:100%; margin-top: 25px; padding: 15px;" onclick="location.href='../index.html'">חזרה לתפריט</button>
+        </div>
+    </div>
+
+    <script>
+        // לוגיקה זהה למקור - נשארת ללא שינוי
+        let built = { emotion: "", need: "" };
+
+        function handleSelect(btn, type, value) {
+            const isBest = btn.getAttribute('data-best') === 'true';
+            const grid = btn.parentElement;
+            const msg = document.getElementById(type + '-msg');
+
+            Array.from(grid.children).forEach(b => {
+                const bBest = b.getAttribute('data-best') === 'true';
+                b.classList.add(bBest ? 'btn-fitting' : 'btn-less-fitting');
+                b.onclick = null;
+            });
+
+            if (!isBest) msg.classList.remove('step-hidden');
+
+            built[type] = value;
+            updatePreview();
+
+            setTimeout(() => {
+                document.getElementById('step-' + type).classList.add('step-hidden');
+                const nextStep = (type === 'emotion') ? 'step-need' : 'step-choice';
+                document.getElementById(nextStep).classList.remove('step-hidden');
+            }, 1500);
+        }
+
+        function updatePreview() {
+            let txt = "ממתין...";
+            if(built.emotion) txt = `"דנה, אני שומע שאת מרגישה <b>${built.emotion}</b>..."`;
+            if(built.need) txt = `"דנה, נשמע שאת מרגישה <b>${built.emotion}</b> כי את זקוקה ל<b>${built.need}</b>."`;
+            document.getElementById('builder-text').innerHTML = txt;
+        }
+
+        function handleDecision(canListen) {
+            if(canListen) {
+                finishDance('הקשבה', 'אני מניח את הפלאפון. תרצי לספר לי איך עבר עלייך היום?');
+            } else {
+                document.getElementById('step-choice').classList.add('step-hidden');
+                document.getElementById('step-my-need').classList.remove('step-hidden');
+            }
+        }
+
+        function finishDance(myNeed, request) {
+            document.getElementById('active-step-container').classList.add('step-hidden');
+            document.getElementById('builder-box').style.display = 'none';
+            
+            let finalSentence = "";
+            if(myNeed === 'הקשבה') {
+                finalSentence = `דנה, נשמע שאת מרגישה <b>${built.emotion}</b> וצריכה <b>${built.need}</b>. אני מניח את הפלאפון בצד עכשיו. ${request}`;
+            } else {
+                finalSentence = `דנה, אני שומע שאת מרגישה <b>${built.emotion}</b> וצריכה <b>${built.need}</b>. כרגע, קשה לי להקשיב כי אני זקוק ל<b>${myNeed}</b>. ${request}`;
+            }
+
+            document.getElementById('final-bubble-text').innerHTML = finalSentence;
+            document.getElementById('final-result').classList.remove('step-hidden');
+            celebrateVictory();
+        }
+    </script>
+</body>
+</html>

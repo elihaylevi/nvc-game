@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../assets/style.css">
+    <script src="needs.js"></script>
+    <script src="../assets/shared.js"></script>
+    
+    <style>
+        .matrix-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .matrix-btn { padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; cursor: pointer; background: white; font-weight: 600; }
+        .matrix-btn.active { background: var(--gold); color: white; border-color: var(--gold); }
+        .hidden { display: none; }
+        #tree-progress { width: 80px; margin-bottom: 10px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <div id="sound-toggle" onclick="toggleMute()" style="position:fixed; top:20px; right:20px; z-index:100; cursor:pointer;">🔊</div>
+    
+    <div id="game-card">        
+        <div id="content-area">
+            <div id="phase-1">
+                <div style="color: #718096; font-size: 0.8rem;">שלב 2: צרכים (זיהוי)</div>
+                <div class="word-display" id="current-word">...</div>
+                <div class="btn-container" id="action-buttons">
+                    <button onclick="checkIsNeed(true)">זה צורך</button>
+                    <button onclick="checkIsNeed(false)">זו אסטרטגיה</button>
+                </div>
+            </div>
+
+            <div id="phase-2" class="hidden">
+                <p>נכון! לאיזו קטגוריה הצורך שייך?</p>
+                <div class="matrix-grid" id="category-matrix"></div>
+            </div>
+
+            <div id="feedback" class="explanation-box" style="display:none; margin-top:15px;"></div>
+            <button id="next-btn" style="display:none; width:100%; margin-top:15px; background:#4a5568; color:white;" onclick="nextQuestion()">המשיכו ←</button>
+            
+            <div class="progress-area">
+                <div class="progress-container"><div id="progress-fill"></div></div>
+                <div id="fire-text" style="color:#ff4d4d; font-size:0.7rem; display:none; margin-top:5px; font-weight:bold;">🔥 ON FIRE 🔥</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let correctCount = 0; 
+        let streakCount = 0; 
+        let currentIndex = 0; 
+        const goal = 5;
+        const gameData = nvcNeedsBank.sort(() => Math.random() - 0.5);
+
+        function updateDisplay() {
+            // ניקוי הילות
+            document.getElementById('game-card').classList.remove('correct-glow', 'error-glow', 'learning-glow', 'intensify');
+            document.getElementById('current-word').classList.remove('shake-me');
+            
+            const item = gameData[currentIndex];
+            document.getElementById('current-word').innerText = item.word;
+            
+            // איפוס תצוגת שלבים
+            document.getElementById('phase-1').classList.remove('hidden');
+            document.getElementById('phase-2').classList.add('hidden');
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('action-buttons').style.display = 'flex';
+        }
+
+        // שלב א': בדיקה אם זה צורך או אסטרטגיה
+        function checkIsNeed(userChoice) {
+            const item = gameData[currentIndex];
+            if (userChoice === item.isNeed) {
+                if (item.isNeed) {
+                    startCategoryPhase(); // צדק וזה צורך - עוברים למטריצה
+                } else {
+                    handleFeedback('correct', item.explanation); // צדק וזה אסטרטגיה - סיום שאלה
+                }
+            } else {
+                handleFeedback('wrong', item.explanation); // טעה בזיהוי הבסיסי - אדום
+            }
+        }
+
+        // שלב ב': הצגת מטריצת הקטגוריות
+        function startCategoryPhase() {
+            document.getElementById('phase-1').classList.add('hidden');
+            const matrixDiv = document.getElementById('category-matrix');
+            matrixDiv.innerHTML = '';
+            
+            Object.keys(needsMatrix).forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'matrix-btn';
+                btn.innerText = cat;
+                btn.onclick = () => checkCategory(cat); // קריאה לפונקציה החדשה
+                matrixDiv.appendChild(btn);
+            });
+            document.getElementById('phase-2').classList.remove('hidden');
+        }
+
+                function checkCategory(selectedCategory) {
+            const item = gameData[currentIndex];
+            
+            if (selectedCategory === item.category) {
+                // תשובה תואמת - ירוק
+                handleFeedback('correct', item.explanation);
+            } else {
+                // "הזדמנות ללמידה" - הניסוח החדש והמשופר שלך (כתום)
+                const learningText = `אנחנו חשבנו שזה יכול להתאים יותר ל-<b>${item.category}</b> כי חלק מ${item.category} הוא ${item.explanation}`;
+                handleFeedback('learning', learningText);
+            }
+        }
+
+        // פונקציה מרכזית לניהול פידבק ויזואלי וטקסטואלי
+        function handleFeedback(type, text) {
+            const card = document.getElementById('game-card');
+            const f = document.getElementById('feedback');
+            const word = document.getElementById('current-word');
+            
+            // ניקוי מצב קודם
+            card.classList.remove('correct-glow', 'error-glow', 'learning-glow');
+            f.className = "explanation-box";
+            f.style.display = 'block';
+            
+            if (type === 'correct') {
+                correctCount++; streakCount++;
+                card.classList.add('correct-glow');
+                f.innerHTML = `<b>בדיוק. ✨</b><br>${text}`;
+                if(!isMuted) soundSuccess.play();
+                createPartyStars('game-card');
+            } 
+            else if (type === 'wrong') {
+                streakCount = 0;
+                card.classList.add('error-glow');
+                word.classList.add('shake-me');
+                f.innerHTML = `<b>זה לא בדיוק...</b><br>${text}`;
+                if(!isMuted) soundError.play();
+            } 
+            else if (type === 'learning') {
+                streakCount = 0; // הזדמנות ללמידה לא שוברת את הרצף באותה חומרה אבל מאפסת אש
+                card.classList.add('learning-glow');
+                f.classList.add('learning-mode');
+                f.innerHTML = `<b>הזדמנות ללמידה:</b><br>${text}`;
+            }
+
+            // הסתרת כפתורי פעולה והצגת כפתור "המשיכו"
+            document.getElementById('phase-1').classList.add('hidden');
+            document.getElementById('phase-2').classList.add('hidden');
+            document.getElementById('next-btn').style.display = 'block';
+            updateVisuals();
+        }
+
+        function updateVisuals() {
+            const bar = document.getElementById('progress-fill');
+            const fireText = document.getElementById('fire-text');
+            
+            // 1. עדכון ויזואלי של הבר
+            bar.style.width = (correctCount / goal) * 100 + "%";
+            
+            // 2. ניהול אפקט ה-Fire
+            if (streakCount >= 3) {
+                bar.classList.add('on-fire');
+                fireText.style.display = 'block';
+            } else {
+                bar.classList.remove('on-fire');
+                fireText.style.display = 'none';
+            }
+
+            // 3. בדיקת ניצחון וסיום שלב
+            if (correctCount >= goal) {
+                // פתיחת שלב 3 בזיכרון הזמני
+                sessionStorage.setItem('stage3Unlocked', 'true');
+
+                // הפעלת החגיגה מה-shared.js
+                celebrateVictory();
+
+                // החלפת תוכן הכרטיס למסך סיום
+                setTimeout(() => {
+                    document.getElementById('content-area').innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h2 style="font-size: 2rem; color: #2d3748;">עץ הצרכים שלך העמיק שורשים! 🌳</h2>
+                            <p style="margin: 20px 0; font-size: 1.1rem;">כל הכבוד! שלב 3: "המשפט המלא" פתוח עכשיו בתפריט הראשי.</p>
+                            <button class="next-btn" 
+                                    style="background:#48bb78; color:white; padding: 15px 30px; font-size: 1.1rem;" 
+                                    onclick="location.href='../index.html'">
+                                חזרה לתפריט ובחירת שלב 3 ←
+                            </button>
+                        </div>
+                    `;
+                }, 500); // השהייה קטנה כדי לתת לבר להתמלא לפני שהכל נעלם
+            }
+        }
+
+        function nextQuestion() { 
+            currentIndex++; 
+            if (currentIndex >= gameData.length) currentIndex = 0; 
+            updateDisplay(); 
+        }
+
+        // הפעלה ראשונית
+        updateDisplay();
+        // הפעלה ראשונית
+        updateDisplay();
+        </script>
+</body>
+</html>

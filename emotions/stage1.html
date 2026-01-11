@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../assets/style.css">
+    <script src="emotions.js"></script>
+    <script src="../assets/shared.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <div id="sound-toggle" onclick="toggleMute()" style="position:fixed; top:20px; right:20px; z-index:100; cursor:pointer;">🔊</div>
+    <div id="game-card">
+        <div id="content-area">
+            <div id="game-ui">
+                <div style="color: #718096; font-size: 0.8rem;">שלב 1: רגשות</div>
+                <div class="word-display" id="current-word">...</div>
+
+                <div style="display:flex; gap:10px; justify-content:center;" id="action-buttons">
+                    <button onclick="processAnswer(true)">זה רגש</button>
+                    <button onclick="processAnswer(false)">זה לא רגש</button>
+                </div>
+                <div id="feedback" style="margin-top:15px; display:none; background:#f7fafc; padding:10px; border-radius:10px;"></div>
+                <button id="next-btn" style="display:none; width:100%; margin-top:15px; background:#4a5568; color:white;" onclick="nextQuestion()">המשיכו ←</button>
+                <div class="progress-container"><div id="progress-fill"></div></div>
+                <div id="fire-text" style="color:#ff4d4d; font-size:0.7rem; display:none; margin-top:5px; font-weight:bold;">🔥 ON FIRE 🔥</div>
+            </div>
+            <div id="finish-screen" style="display:none;">
+                <h2 style="font-size:1.5rem;">אלוף! סיימת רגשות.</h2>
+                <button style="background:#48bb78; color:white; width:100%;" onclick="location.href='../needs/stage2.html'">נעלה רמה?</button>
+                <button style="margin-top:10px; border:none; background:none; color:#718096;" onclick="showSharedRestMessage('content-area')">צורך במנוחה</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let correctCount = 0; let streakCount = 0; let currentIndex = 0; const goal = 5;
+        const gameData = nvcBank.sort(() => Math.random() - 0.5);
+
+        function updateDisplay() {
+            document.getElementById('game-card').classList.remove('correct-glow', 'error-glow');
+            const item = gameData[currentIndex];
+            document.getElementById('current-word').innerText = item.word;
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('action-buttons').style.display = 'flex';
+        }
+
+        function processAnswer(userChoice) {
+            const item = gameData[currentIndex];
+            const isCorrect = userChoice === item.isFeeling;
+            const bar = document.getElementById('progress-fill');
+            
+            document.getElementById('action-buttons').style.display = 'none';
+            document.getElementById('feedback').style.display = 'block';
+
+            if (isCorrect) {
+                correctCount++; streakCount++;
+                document.getElementById('game-card').classList.add('correct-glow');
+                if(!isMuted) { soundSuccess.currentTime=0; soundSuccess.play(); }
+                createPartyStars('game-card');
+                if(streakCount >= 3) { 
+                    bar.classList.add('on-fire'); 
+                    document.getElementById('fire-text').style.display='block';
+                    if(streakCount > 3) { bar.classList.remove('intensify'); void bar.offsetWidth; bar.classList.add('intensify'); }
+                }
+            } else {
+                streakCount = 0;
+                document.getElementById('game-card').classList.add('error-glow');
+                document.getElementById('current-word').classList.add('shake-me');
+                if(!isMuted) { soundError.currentTime=0; soundError.play(); }
+                bar.classList.remove('on-fire', 'intensify');
+                document.getElementById('fire-text').style.display='none';
+            }
+            
+            bar.style.width = (correctCount/goal)*100 + "%";
+            document.getElementById('feedback').innerHTML = isCorrect ? `<b>בדיוק. ✨</b><br>${item.explanation}` : `<b>למידה:</b><br>${item.explanation}`;
+            
+            // --- כאן הוספנו את הקריאה לחגיגה ---
+            if (correctCount >= goal) {
+                // קריאה לחגיגה מה-shared.js
+                celebrateVictory(); 
+
+                // השהייה קלה לפני מעבר למסך הסיום כדי שהמשתמש יראה את הקונפטי על הכרטיס
+                setTimeout(() => { 
+                    document.getElementById('game-ui').style.display='none'; 
+                    document.getElementById('finish-screen').style.display='block'; 
+                }, 1500); 
+            } else {
+                document.getElementById('next-btn').style.display = 'block';
+            }
+        }
+
+        function nextQuestion() { currentIndex++; updateDisplay(); }
+        updateDisplay();
+    </script>
+</body>
+</html>

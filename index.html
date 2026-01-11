@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>NVC Master - דף הבית</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <style>
+        body { background: url('background.png') no-repeat center center fixed; background-size: cover; }
+        .start-card { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10; width: 400px; }
+        .tree-preview { width: 120px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="start-card">
+        <h1>NVC Master</h1>
+        <p>מוכנים להתחיל במסע של הקשבה וחיבור?</p>
+        
+        <div class="stages-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+            <button class="stage-btn" onclick="location.href='emotions/stage1.html'">שלב 1: רגשות</button>
+            <button class="stage-btn" onclick="location.href='needs/stage2.html'">שלב 2: צרכים</button>
+            
+            <button id="stage3-btn" class="stage-btn locked" onclick="tryGoToStage3()">
+                שלב 3: המשפט המלא <span id="lock-icon">🔒</span>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // בדיקה האם שלב 3 פתוח בזיכרון של הדפדפן
+        window.onload = function() {
+            const isUnlocked = sessionStorage.getItem('stage3Unlocked') === 'true';
+            const btn3 = document.getElementById('stage3-btn');
+            const lockIcon = document.getElementById('lock-icon');
+    
+            if (isUnlocked) {
+                btn3.classList.remove('locked');
+                lockIcon.style.display = 'none'; // הסרת המנעול
+                btn3.style.background = '#4a90e2'; // צבע כחול בולט לשלב פתוח
+                btn3.style.color = 'white';
+            }
+        };
+    
+        function tryGoToStage3() {
+            if (sessionStorage.getItem('stage3Unlocked') === 'true') {
+                location.href = 'sentences/stage3.html';
+            } else {
+                // אפשר להוסיף כאן אפקט רעידה אם לוחצים על נעול
+                document.getElementById('stage3-btn').classList.add('shake-me');
+                setTimeout(() => document.getElementById('stage3-btn').classList.remove('shake-me'), 500);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
