@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>otheReality VR - Stage 6</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+</head>
+<body>
+
+    <a-scene>
+        <a-assets>
+            <video id="rev-road-vid" src="path_to_your_video.mp4" preload="auto"></video>
+        </a-assets>
+
+        <a-entity environment="preset: forest; lighting: point; groundTexture: walkey; playArea: 1; dressingAmount: 50"></a-entity>
+
+        <a-entity camera look-controls position="0 1.6 0">
+            <a-entity cursor="fuse: true; fuseTimeout: 1500"
+                      position="0 0 -1"
+                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                      material="color: white; shader: flat"
+                      animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1500; from: 1 1 1; to: 0.1 0.1 0.1"
+                      animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 500; to: 1 1 1">
+            </a-entity>
+        </a-entity>
+
+        <a-video src="#rev-road-vid" width="4" height="2.25" position="0 2 -4" id="main-screen">
+            <a-plane id="vr-cover" width="4.1" height="2.3" position="0 0 0.1" color="#000" opacity="0.9">
+                <a-text value="הביטו כאן כדי להתחיל" align="center" color="white" position="0 0 0.1"></a-text>
+            </a-plane>
+        </a-video>
+
+        <a-entity id="frank-speech-vr" position="0 1 -3.5" visible="false">
+            <a-plane width="3" height="0.8" color="#fff5f5" material="side: double">
+                <a-text value="Frank: I'll die before I fit in that box!" 
+                        align="center" color="#e53e3e" width="2.8" font="mozillavr"></a-text>
+            </a-plane>
+        </a-entity>
+
+        <a-entity id="vr-feelings-grid" position="-2.5 1.5 -3" visible="false">
+            <a-text value="מה הוא מרגיש?" position="0 1 0" align="center" width="4"></a-text>
+            
+            <a-plane class="feeling-sq" position="0 0.5 0" width="0.8" height="0.4" color="#059669" opacity="0">
+                <a-text value="כעס" align="center" scale="0.5 0.5 0.5"></a-text>
+            </a-plane>
+            <a-plane class="feeling-sq" position="0 0 0" width="0.8" height="0.4" color="#059669" opacity="0">
+                <a-text value="תסכול" align="center" scale="0.5 0.5 0.5"></a-text>
+            </a-plane>
+            <a-plane class="feeling-sq" position="0 -0.5 0" width="0.8" height="0.4" color="#6ee7b7" opacity="0">
+                <a-text value="בדידות" align="center" color="#064e3b" scale="0.5 0.5 0.5"></a-text>
+            </a-plane>
+        </a-entity>
+
+    </a-scene>
+
+    <script>
+        // לוגיקת VR מבוססת מבט
+        const cover = document.querySelector('#vr-cover');
+        const video = document.querySelector('#rev-road-vid');
+        const feelingsGrid = document.querySelector('#vr-feelings-grid');
+
+        // הפעלה במבט
+        cover.addEventListener('click', function () {
+            // התחלה שקטה (דימוי ללוגיקה שלך)
+            video.muted = true;
+            video.play();
+            cover.setAttribute('visible', 'false');
+
+            // חשיפת סאונד אחרי 4 שניות
+            setTimeout(() => {
+                video.muted = false;
+            }, 4000);
+
+            // מעקב אחרי זמן הסיום
+            video.addEventListener('timeupdate', function() {
+                if (video.currentTime >= 15) { // נניח 15 שניות של מקטע
+                    video.pause();
+                    showVRAnalysis();
+                }
+            });
+        });
+
+        function showVRAnalysis() {
+            document.querySelector('#frank-speech-vr').setAttribute('visible', 'true');
+            feelingsGrid.setAttribute('visible', 'true');
+            
+            // הופעה מדורגת של הריבועים ב-VR
+            const squares = document.querySelectorAll('.feeling-sq');
+            squares.forEach((sq, i) => {
+                setTimeout(() => {
+                    sq.setAttribute('animation', {
+                        property: 'opacity',
+                        to: 1,
+                        dur: 1000
+                    });
+                    sq.setAttribute('animation__pos', {
+                        property: 'position',
+                        from: sq.getAttribute('position').x + ' ' + (sq.getAttribute('position').y - 0.2) + ' ' + sq.getAttribute('position').z,
+                        to: sq.getAttribute('position').x + ' ' + sq.getAttribute('position').y + ' ' + sq.getAttribute('position').z,
+                        dur: 1000
+                    });
+                }, i * 800);
+            });
+        }
+    </script>
+</body>
+</html>
