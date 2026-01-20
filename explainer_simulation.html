@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Empathy VR - Stratosphere IMAX</title>
+    <title>Empathy VR - Command Center</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
 </head>
@@ -10,8 +10,8 @@
 
     <div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; font-family:sans-serif; padding: 20px;">
         <h1 style="font-size: 3.5rem;">The Anatomy of Emotion</h1>
-        <p style="font-size: 1.5rem; color: #cbd5e1;">Stratosphere Mode: Floating at 30 meters height.</p>
-        <button onclick="prepareExperience()" style="margin-top: 40px; padding:25px 60px; font-size:28px; cursor:pointer; background:#3b82f6; color:white; border:none; border-radius:50px; font-weight:bold;">INITIALIZE MISSION</button>
+        <p style="font-size: 1.5rem; color: #cbd5e1;">Command Mode: Viewer elevated, Data grounded.</p>
+        <button onclick="prepareExperience()" style="margin-top: 40px; padding:25px 60px; font-size:28px; cursor:pointer; background:#3b82f6; color:white; border:none; border-radius:50px; font-weight:bold;">INITIALIZE SYSTEM</button>
     </div>
 
     <a-scene>
@@ -19,12 +19,12 @@
             <video id="empathy-video" src="empathy.mp4" preload="auto" crossorigin="anonymous"></video>
         </a-assets>
 
-        <a-entity id="env" environment="preset: forest; lighting: none; skyType: gradient; skyColor: #010101; horizonColor: #010101; fog: 0.98; groundColor: #000; dressingAmount: 0; ground: flat"></a-entity>
+        <a-entity id="env" environment="preset: forest; lighting: none; skyType: gradient; skyColor: #010101; horizonColor: #050505; fog: 0.8; groundColor: #020202; dressingAmount: 20; ground: flat"></a-entity>
         
-        <a-light type="ambient" color="#FFF" intensity="0.1"></a-light>
-        <a-light type="point" position="0 35 0" intensity="1.2" color="#fbbf24" distance="40"></a-light>
+        <a-light type="ambient" color="#FFF" intensity="0.2"></a-light>
+        <a-light type="point" position="0 5 -3" intensity="1" color="#fbbf24" distance="20"></a-light>
 
-        <a-camera id="main-cam" position="0 30 0" look-controls>
+        <a-camera id="main-cam" position="0 3.5 0" look-controls>
             <a-cursor color="#fbbf24" scale="0.6 0.6 0.6"></a-cursor>
             
             <a-entity id="nav-arrow" visible="false" position="0 -0.5 -1.2" scale="0.2 0.2 0.2">
@@ -35,28 +35,28 @@
             <a-text id="countdown-text" value="" position="0 0.5 -1.5" align="center" color="#fbbf24" width="4" font="exo2bold"></a-text>
         </a-camera>
 
-        <a-entity position="0 30 -8"> 
+        <a-entity position="0 0 -7"> 
             
-            <a-entity position="0 3.5 0">
-                <a-plane material="shader: flat; color: #000" width="12" height="2.8" opacity="0.95"></a-plane>
+            <a-entity id="matrix-container" position="0 0.5 0"></a-entity>
+
+            <a-entity position="0 6.5 0">
+                <a-plane material="shader: flat; color: #000" width="11" height="2.5" opacity="0.95"></a-plane>
                 <a-text id="visual-description-text" 
-                        value="System Initializing at Altitude... Look forward." 
+                        value="System Ready. Look straight ahead." 
                         align="center" 
-                        width="11" 
-                        wrap-count="30" 
+                        width="10" 
+                        wrap-count="28" 
                         color="#fbbf24" 
                         font="exo2bold"
                         position="0 0 0.1"></a-text>
             </a-entity>
-
-            <a-entity id="matrix-container" position="0 -1 0"></a-entity>
         </a-entity>
 
-        <a-entity position="12 30 0" rotation="0 -90 0">
-            <a-video src="#empathy-video" width="10" height="5.6">
-                <a-entity geometry="primitive: plane; width: 10.3; height: 5.9" position="0 0 -0.05" material="color: #080808"></a-entity>
+        <a-entity position="10 3.5 0" rotation="0 -90 0">
+            <a-video src="#empathy-video" width="10" height="6">
+                <a-entity geometry="primitive: plane; width: 10.3; height: 6.3" position="0 -0.1 -0.05" material="color: #080808"></a-entity>
             </a-video>
-            <a-text value="VIDEO FEED" position="0 3.5 0" align="center" width="10" color="#333"></a-text>
+            <a-text value="VIDEO FEED" position="0 3.5 0" align="center" width="8" color="#333"></a-text>
         </a-entity>
 
     </a-scene>
@@ -199,12 +199,14 @@
                 const row = Math.floor(i / 5);
                 const col = i % 5;
                 const slot = document.createElement('a-entity');
-                slot.setAttribute('position', `${(col-2)*2.2} ${(1.6-row*0.9)} 0`); // מרווח פרימיום
+                // שורה 4 (התחתונה) תהיה בגובה Y=0.5 (כמעט נוגעת ברצפה)
+                // שורה 0 (העליונה) תהיה בגובה Y=4.1
+                slot.setAttribute('position', `${(col-2)*2.2} ${(4-row)*0.9} 0`); 
                 slot.dataset.word = item.w;
                 const content = document.createElement('a-entity');
                 content.classList.add('matrix-content');
                 const box = document.createElement('a-entity');
-                box.setAttribute('geometry', 'primitive: plane; width: 2; height: 0.7');
+                box.setAttribute('geometry', 'primitive: plane; width: 1.8; height: 0.7');
                 box.setAttribute('material', {shader: 'flat', color: '#1e293b', opacity: 0.5}); 
                 const textEl = document.createElement('a-text');
                 textEl.setAttribute('value', item.w);
