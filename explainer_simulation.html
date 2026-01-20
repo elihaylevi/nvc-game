@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Empathy VR - Full Narrative Sync</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+</head>
+<body>
+
+    <div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; font-family:sans-serif; padding: 20px;">
+        <h1 style="font-size: 3.5rem; margin-bottom: 10px;">The Anatomy of Emotion</h1>
+        <p style="font-size: 1.5rem; color: #cbd5e1; max-width: 800px;">Full Narrative Synchronization Mode</p>
+        <button onclick="startExperience()" style="margin-top: 40px; padding:25px 60px; font-size:28px; cursor:pointer; background:#22c55e; color:white; border:none; border-radius:50px; font-weight:bold;">START EXPERIENCE</button>
+    </div>
+
+    <a-scene>
+        <a-assets>
+            <video id="empathy-video" src="empathy.mp4" preload="auto" crossorigin="anonymous"></video>
+        </a-assets>
+
+        <a-entity id="env" environment="preset: forest; lighting: distant; lightPosition: 1 1 0"></a-entity>
+        <a-light type="ambient" color="#FFF" intensity="0.8"></a-light>
+
+        <a-camera position="0 1.6 0"><a-cursor color="#fbbf24"></a-cursor></a-camera>
+
+        <a-entity position="3.5 2.2 -4.5" rotation="0 -25 0">
+            <a-video src="#empathy-video" width="5" height="2.8">
+                <a-entity geometry="primitive: plane; width: 5.2; height: 3" position="0 0 -0.02" material="color: #111"></a-entity>
+            </a-video>
+        </a-entity>
+
+        <a-entity position="-3.5 2.2 -4.5" rotation="0 25 0">
+            
+            <a-entity position="0 1.8 0">
+                <a-plane material="shader: flat; color: #000" width="4.5" height="1.8" opacity="0.85">
+                    <a-text id="visual-description-text" value="System Online. Waiting for start..." align="center" width="4" wrap-count="35" color="#fbbf24" font="exo2bold" position="0 0 0.05"></a-text>
+                </a-plane>
+            </a-entity>
+
+            <a-entity id="matrix-container" position="0 -0.8 0"></a-entity>
+        </a-entity>
+
+    </a-scene>
+
+    <script>
+        const video = document.querySelector('#empathy-video');
+        const matrixContainer = document.querySelector('#matrix-container');
+        const visualTextEl = document.querySelector('#visual-description-text');
+        const envEl = document.querySelector('#env');
+
+        function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+
+        const childWords = [
+            {w:"Curiosity", t:0}, {w:"Wonder", t:0}, {w:"Interest", t:0}, {w:"Attraction", t:0}, {w:"Play", t:0},
+            {w:"Pain", t:0}, {w:"Fear", t:0}, {w:"Surprise", t:0}, {w:"Shock", t:0}, {w:"Hunger", t:0},
+            {w:"Joy", t:0}, {w:"Belonging", t:0}, {w:"Safety", t:0}, {w:"Warmth", t:0}, {w:"Trust", t:0},
+            {w:"Sadness", t:0}, {w:"Loneliness", t:0}, {w:"Longing", t:0}, {w:"Loss", t:0}, {w:"Cold", t:0},
+            {w:"Love", t:0}, {w:"Hope", t:0}, {w:"Rest", t:0}, {w:"Crying", t:0}, {w:"Gaze", t:0}
+        ];
+
+        const teenWords = [
+            {w:"Failure", t:1}, {w:"Guilt", t:1}, {w:"Lazy", t:1}, {w:"Shame", t:1}, {w:"Stupid", t:1},
+            {w:"Hate", t:1}, {w:"Enemies", t:1}, {w:"Unfair", t:1}, {w:"Wrong", t:1}, {w:"Rebel", t:1},
+            {w:"Crush", t:0}, {w:"Awkward", t:0}, {w:"Scared", t:0}, {w:"Hope", t:0}, {w:"Vulnerable", t:0},
+            {w:"No-Chance", t:1}, {w:"Snob", t:1}, {w:"Fake", t:1}, {w:"Loser", t:1}, {w:"Ugly", t:1},
+            {w:"Safe", t:0}, {w:"Calm", t:0}, {w:"Belong", t:0}, {w:"Angry", t:0}, {w:"Tired", t:0}
+        ];
+
+        const adultWords = [
+            {w:"Imposter", t:1}, {w:"Fired", t:1}, {w:"Mistake", t:1}, {w:"Useless", t:1}, {w:"Guilty", t:1},
+            {w:"Idiot", t:1}, {w:"Rude", t:1}, {w:"Victim", t:1}, {w:"Mean", t:1}, {w:"Hate", t:1},
+            {w:"Lonely", t:0}, {w:"Tired", t:0}, {w:"Sad", t:0}, {w:"Fear", t:0}, {w:"Need", t:0},
+            {w:"Cynical", t:1}, {w:"Cold", t:1}, {w:"Alone", t:1}, {w:"Prison", t:1}, {w:"Bitter", t:1},
+            {w:"Love", t:0}, {w:"Warmth", t:0}, {w:"Quiet", t:0}, {w:"Breath", t:0}, {w:"Touch", t:0}
+        ];
+
+        // --- THE CALIBRATED NARRATIVE TIMELINE ---
+        const timeline = [
+            // PART 1: THE CHILD
+            { time: 0, action: "newPhase", words: childWords, preset: "forest" },
+            { time: 0.5, action: "visual", text: "A lush green garden. A 5-year-old child crawls through the grass. He spots a colorful flower and approaches with wide-eyed wonder, his small hand reaching out, trembling with interest." },
+            { time: 8.04, action: "light", names: ["Curiosity", "Wonder", "Interest"], color: "#4ade80" }, 
+            
+            { time: 13.7, action: "visual", text: "A bee emerges from the flower and stings him. He recoils sharply in shock, then bursts into tears, running to find comfort and safety." },
+            { time: 16.0, action: "light", names: ["Pain", "Fear", "Surprise", "Shock"], color: "#86efac" },
+            
+            { time: 31.16, action: "visual", text: "The child calms down. A young girl approaches with a bucket. He smiles, and they begin building a sandcastle together in perfect, silent harmony." },
+            { time: 34.12, action: "light", names: ["Joy", "Belonging", "Safety", "Warmth"], color: "#22c55e" },
+            
+            { time: 43.72, action: "visual", text: "The girl's mother calls her away. She leaves in the middle of the game. The child is left alone, his hand dropping in a sudden wave of sadness." },
+            { time: 48.4, action: "light", names: ["Sadness", "Loneliness", "Longing"], color: "#16a34a" },
+
+            // PART 2: THE TEENAGER (61.92s)
+            { time: 61.92, action: "newPhase", words: teenWords, preset: "goaland" },
+            { time: 62.5, action: "visual", text: "He runs to a swing to cheer up. He swings back into the shadow... and returns forward as a 14-year-old teenager in a concrete school hallway." },
+            
+            { time: 68.62, action: "visual", text: "He holds a test with a grade of 60. The number '60' morphs into 'You are lazy', and the teacher's note turns into 'You are a disappointment'." },
+            { time: 72.0, action: "light", names: ["Failure", "Guilt", "Shame", "Lazy"], color: "#ef4444" },
+            
+            { time: 79.78, action: "visual", text: "At home, his father sits before the news, angry: 'They are ruining the country, evil people'. The teenager absorbs this model of the enemy." },
+            { time: 82.0, action: "light", names: ["Hate", "Enemies", "Unfair"], color: "#b91c1c" },
+            
+            { time: 94.28, action: "visual", text: "He sees a girl in the hallway. For a second, there is a spark of hope. She laughs with a friend. He freezes and retreats into his hoodie." },
+            { time: 96.0, action: "light", names: ["Awkward", "Scared", "Vulnerable", "Hope"], color: "#4ade80" }, 
+            { time: 100.0, action: "light", names: ["No-Chance", "Loser", "Ugly"], color: "#dc2626" },
+            
+            { time: 104.76, action: "visual", text: "He joins a group of boys laughing at a classmate. He feels uncomfortable but laughs with them just to belong." },
+            { time: 107.0, action: "light", names: ["Wrong", "Fake"], color: "#ef4444" },
+
+            { time: 113.06, action: "visual", text: "He enters his home and rests his head on his mother's shoulder for a brief moment of quiet sanctuary." },
+            { time: 115.0, action: "light", names: ["Safe", "Calm", "Belong"], color: "#22c55e" },
+
+            // PART 3: THE ADULT (122.02s)
+            { time: 122.02, action: "newPhase", words: adultWords, preset: "tron" },
+            { time: 125.0, action: "visual", text: "He walks out the front door as a 30-year-old man in a suit, entering a cold, metallic high-tech office." },
+            
+            { time: 131.32, action: "visual", text: "In the office, an email from his boss pops up: 'Come for a talk'. He freezes in the internal courtroom of anxiety." },
+            { time: 135.0, action: "light", names: ["Imposter", "Fired", "Guilty"], color: "#7f1d1d" },
+            
+            { time: 139.18, action: "visual", text: "Angry driving in traffic. He arrives home to a messy house and glares at the dirty dishes in the sink as if they were a personal attack." },
+            { time: 145.0, action: "light", names: ["Idiot", "Victim", "Mean", "Cynical"], color: "#991b1b" },
+            
+            { time: 158.88, action: "visual", text: "His wife asks 'How are you?'. For a moment, his eyes are soft, the lonely child peeking from within. He wants a hug, but instead says 'Everything is normal' and walks away." },
+            { time: 165.0, action: "battle", greenName: "Love", redNames: ["Alone", "Prison", "Bitter", "Cold"] }
+        ];
+
+        let lastTriggeredIndex = -1;
+
+        function startExperience() {
+            document.getElementById('overlay').style.display = 'none';
+            video.play();
+            function checkSync() {
+                const ct = video.currentTime;
+                for (let i = 0; i < timeline.length; i++) {
+                    if (ct >= timeline[i].time && i > lastTriggeredIndex) {
+                        executeEvent(timeline[i]);
+                        lastTriggeredIndex = i;
+                    }
+                }
+                requestAnimationFrame(checkSync);
+            }
+            requestAnimationFrame(checkSync);
+        }
+
+        function executeEvent(ev) {
+            if (ev.action === "newPhase") {
+                buildShuffledGrid(ev.words);
+                if (ev.preset) envEl.setAttribute('environment', {preset: ev.preset, lighting: 'distant'});
+            } else if (ev.action === "light") {
+                highlightByNames(ev.names, ev.color);
+            } else if (ev.action === "battle") {
+                renderBattleByName(ev.greenName, ev.redNames);
+            } else if (ev.action === "visual") {
+                visualTextEl.setAttribute('value', ev.text);
+            }
+        }
+
+        function buildShuffledGrid(words) {
+            matrixContainer.innerHTML = ''; 
+            const shuffledWords = shuffle([...words]);
+            shuffledWords.forEach((item, i) => {
+                const row = Math.floor(i / 5);
+                const col = i % 5;
+                const slot = document.createElement('a-entity');
+                slot.setAttribute('position', `${(col-2)*0.9} ${(1.6-row)*0.45} 0`);
+                slot.dataset.word = item.w;
+                const content = document.createElement('a-entity');
+                content.classList.add('matrix-content');
+                const box = document.createElement('a-entity');
+                box.setAttribute('geometry', 'primitive: plane; width: 0.8; height: 0.35');
+                box.setAttribute('material', {shader: 'flat', color: '#1e293b', opacity: 0.4}); 
+                const textEl = document.createElement('a-text');
+                textEl.setAttribute('value', item.w);
+                textEl.setAttribute('align', 'center');
+                textEl.setAttribute('width', '2.5');
+                textEl.setAttribute('color', '#475569'); 
+                textEl.setAttribute('position', '0 0 0.01'); 
+                textEl.setAttribute('font', 'exo2bold'); 
+                content.appendChild(box);
+                content.appendChild(textEl);
+                slot.appendChild(content);
+                matrixContainer.appendChild(slot);
+            });
+        }
+
+        function highlightByNames(names, color) {
+            const slots = matrixContainer.children;
+            for (let slot of slots) {
+                const word = slot.dataset.word;
+                const content = slot.querySelector('.matrix-content');
+                const box = content.querySelector('a-entity[geometry]');
+                const textEl = content.querySelector('a-text');
+                if (names.includes(word)) {
+                    box.setAttribute('material', 'color', color);
+                    box.setAttribute('material', 'opacity', 1);
+                    textEl.setAttribute('color', 'white');
+                    content.setAttribute('animation__pop', 'property: position.z; to: 0.3; dur: 400; easing: easeOutBack');
+                } else {
+                    box.setAttribute('material', 'color', '#1e293b');
+                    box.setAttribute('material', 'opacity', 0.3);
+                    textEl.setAttribute('color', '#475569');
+                    content.setAttribute('animation__pop', 'property: position.z; to: 0; dur: 400');
+                }
+            }
+        }
+
+        function renderBattleByName(greenName, redNames) {
+            const slots = matrixContainer.children;
+            for (let slot of slots) {
+                const word = slot.dataset.word;
+                const content = slot.querySelector('.matrix-content');
+                const box = content.querySelector('a-entity[geometry]');
+                const textEl = content.querySelector('a-text');
+                if (word === greenName) {
+                    slot.setAttribute('visible', true);
+                    box.setAttribute('material', 'color', '#22c55e');
+                    textEl.setAttribute('color', 'white');
+                    content.setAttribute('position', '0 0 0.3');
+                } else if (redNames.includes(word)) {
+                    slot.setAttribute('visible', true);
+                    box.setAttribute('material', 'color', '#7f1d1d');
+                    textEl.setAttribute('color', 'white');
+                    content.setAttribute('scale', '1.4 1.4 1.4');
+                    content.setAttribute('position', '0 0 0.5');
+                } else {
+                    slot.setAttribute('visible', false);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
