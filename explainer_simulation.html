@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Empathy VR - Infinite Space IMAX</title>
+    <title>Empathy VR - Stratosphere IMAX</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
 </head>
@@ -10,8 +10,8 @@
 
     <div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; font-family:sans-serif; padding: 20px;">
         <h1 style="font-size: 3.5rem;">The Anatomy of Emotion</h1>
-        <p style="font-size: 1.5rem; color: #cbd5e1;">Infinite Space Mode: Ground lowered, interface maximized.</p>
-        <button onclick="prepareExperience()" style="margin-top: 40px; padding:25px 60px; font-size:28px; cursor:pointer; background:#3b82f6; color:white; border:none; border-radius:50px; font-weight:bold;">INITIALIZE SYSTEM</button>
+        <p style="font-size: 1.5rem; color: #cbd5e1;">Stratosphere Mode: Floating at 30 meters height.</p>
+        <button onclick="prepareExperience()" style="margin-top: 40px; padding:25px 60px; font-size:28px; cursor:pointer; background:#3b82f6; color:white; border:none; border-radius:50px; font-weight:bold;">INITIALIZE MISSION</button>
     </div>
 
     <a-scene>
@@ -19,12 +19,12 @@
             <video id="empathy-video" src="empathy.mp4" preload="auto" crossorigin="anonymous"></video>
         </a-assets>
 
-        <a-entity id="env" environment="preset: forest; lighting: none; skyType: gradient; skyColor: #010101; horizonColor: #020202; fog: 0.95; groundColor: #000; dressingAmount: 5; ground: flat"></a-entity>
+        <a-entity id="env" environment="preset: forest; lighting: none; skyType: gradient; skyColor: #010101; horizonColor: #010101; fog: 0.98; groundColor: #000; dressingAmount: 0; ground: flat"></a-entity>
         
-        <a-light type="ambient" color="#FFF" intensity="0.2"></a-light>
-        <a-light type="point" position="0 10 2" intensity="1" color="#fbbf24" distance="30"></a-light>
+        <a-light type="ambient" color="#FFF" intensity="0.1"></a-light>
+        <a-light type="point" position="0 35 0" intensity="1.2" color="#fbbf24" distance="40"></a-light>
 
-        <a-camera id="main-cam" position="0 10 0" look-controls>
+        <a-camera id="main-cam" position="0 30 0" look-controls>
             <a-cursor color="#fbbf24" scale="0.6 0.6 0.6"></a-cursor>
             
             <a-entity id="nav-arrow" visible="false" position="0 -0.5 -1.2" scale="0.2 0.2 0.2">
@@ -35,15 +35,15 @@
             <a-text id="countdown-text" value="" position="0 0.5 -1.5" align="center" color="#fbbf24" width="4" font="exo2bold"></a-text>
         </a-camera>
 
-        <a-entity position="0 4 -7"> 
+        <a-entity position="0 30 -8"> 
             
-            <a-entity position="0 3.2 0">
-                <a-plane material="shader: flat; color: #000" width="11" height="2.5" opacity="0.95"></a-plane>
+            <a-entity position="0 3.5 0">
+                <a-plane material="shader: flat; color: #000" width="12" height="2.8" opacity="0.95"></a-plane>
                 <a-text id="visual-description-text" 
-                        value="System Initializing... Look straight ahead." 
+                        value="System Initializing at Altitude... Look forward." 
                         align="center" 
-                        width="10" 
-                        wrap-count="32" 
+                        width="11" 
+                        wrap-count="30" 
                         color="#fbbf24" 
                         font="exo2bold"
                         position="0 0 0.1"></a-text>
@@ -52,11 +52,11 @@
             <a-entity id="matrix-container" position="0 -1 0"></a-entity>
         </a-entity>
 
-        <a-entity position="10 4 0" rotation="0 -90 0">
-            <a-video src="#empathy-video" width="9" height="5">
-                <a-entity geometry="primitive: plane; width: 9.3; height: 5.3" position="0 0 -0.05" material="color: #080808"></a-entity>
+        <a-entity position="12 30 0" rotation="0 -90 0">
+            <a-video src="#empathy-video" width="10" height="5.6">
+                <a-entity geometry="primitive: plane; width: 10.3; height: 5.9" position="0 0 -0.05" material="color: #080808"></a-entity>
             </a-video>
-            <a-text value="VIDEO FEED" position="0 3 0" align="center" width="8" color="#333"></a-text>
+            <a-text value="VIDEO FEED" position="0 3.5 0" align="center" width="10" color="#333"></a-text>
         </a-entity>
 
     </a-scene>
@@ -199,17 +199,17 @@
                 const row = Math.floor(i / 5);
                 const col = i % 5;
                 const slot = document.createElement('a-entity');
-                slot.setAttribute('position', `${(col-2)*2} ${(1.5-row*0.8)} 0`); // מרווח ענק
+                slot.setAttribute('position', `${(col-2)*2.2} ${(1.6-row*0.9)} 0`); // מרווח פרימיום
                 slot.dataset.word = item.w;
                 const content = document.createElement('a-entity');
                 content.classList.add('matrix-content');
                 const box = document.createElement('a-entity');
-                box.setAttribute('geometry', 'primitive: plane; width: 1.8; height: 0.6');
+                box.setAttribute('geometry', 'primitive: plane; width: 2; height: 0.7');
                 box.setAttribute('material', {shader: 'flat', color: '#1e293b', opacity: 0.5}); 
                 const textEl = document.createElement('a-text');
                 textEl.setAttribute('value', item.w);
                 textEl.setAttribute('align', 'center');
-                textEl.setAttribute('width', '6'); 
+                textEl.setAttribute('width', '6.5'); 
                 textEl.setAttribute('color', '#64748b'); 
                 textEl.setAttribute('position', '0 0 0.02'); 
                 textEl.setAttribute('font', 'exo2bold'); 
@@ -231,7 +231,7 @@
                     box.setAttribute('material', 'color', color);
                     box.setAttribute('material', 'opacity', 1);
                     textEl.setAttribute('color', 'white');
-                    content.setAttribute('animation__pop', 'property: position.z; to: 0.6; dur: 400; easing: easeOutBack');
+                    content.setAttribute('animation__pop', 'property: position.z; to: 0.8; dur: 400; easing: easeOutBack');
                 } else {
                     box.setAttribute('material', 'color', '#1e293b');
                     box.setAttribute('material', 'opacity', 0.2);
@@ -254,13 +254,13 @@
                     slot.setAttribute('visible', true);
                     box.setAttribute('material', 'color', '#22c55e'); 
                     textEl.setAttribute('color', 'white');
-                    content.setAttribute('position', '0 0 0.5');
+                    content.setAttribute('position', '0 0 0.6');
                 } else if (redFinal.includes(word)) {
                     slot.setAttribute('visible', true);
                     box.setAttribute('material', 'color', '#7f1d1d'); 
                     textEl.setAttribute('color', 'white');
-                    content.setAttribute('scale', '1.5 1.5 1.5');
-                    content.setAttribute('position', '0 0 1');
+                    content.setAttribute('scale', '1.6 1.6 1.6');
+                    content.setAttribute('position', '0 0 1.2');
                 } else {
                     slot.setAttribute('visible', false);
                 }
